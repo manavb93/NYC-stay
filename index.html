@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StayWise NYC | Room Type Predictor</title>
+  <meta name="description" content="Predict the Airbnb room type of a New York City listing with a machine learning model.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <header class="nav">
+    <div class="wrap nav__inner">
+      <a href="#home" class="brand" aria-label="StayWise NYC home">
+        <svg class="brand__logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg>
+        StayWise NYC
+      </a>
+      <button class="nav__toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav__links" id="navLinks">
+        <a href="#home">Home</a>
+        <a href="#predictor">Predictor</a>
+        <a href="#about">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="home">
+      <div class="wrap hero__inner">
+        <h1>Find Your Perfect Stay in New York City</h1>
+        <p class="hero__sub">Discover accommodation types through intelligent machine learning. Enter listing details and let our AI predict the most suitable room category.</p>
+        <a href="#predictor" class="btn btn--primary btn--lg">Predict Room Type</a>
+      </div>
+      <div class="skyline" aria-hidden="true"></div>
+    </section>
+
+    <!-- ============ PREDICTOR ============ -->
+    <section class="section" id="predictor">
+      <div class="wrap">
+        <h2>Describe the listing</h2>
+        <p class="section__lead">Fill in all ten fields. The model reads exactly these features.</p>
+
+        <div class="predictor">
+          <form id="predictForm" class="card form" novalidate>
+            <fieldset>
+              <legend>Location Details</legend>
+              <div class="grid">
+                <label class="field">Latitude
+                  <input type="number" name="latitude" step="any" min="-90" max="90" placeholder="40.7580" required>
+                  <small class="err" data-for="latitude"></small>
+                </label>
+                <label class="field">Longitude
+                  <input type="number" name="longitude" step="any" min="-180" max="180" placeholder="-73.9855" required>
+                  <small class="err" data-for="longitude"></small>
+                </label>
+                <label class="field">Neighbourhood Group
+                  <select name="neighbourhood_group" required>
+                    <option value="" selected disabled>Choose a borough</option>
+                    <option>Manhattan</option>
+                    <option>Brooklyn</option>
+                    <option>Queens</option>
+                    <option>Bronx</option>
+                    <option>Staten Island</option>
+                  </select>
+                  <small class="err" data-for="neighbourhood_group"></small>
+                </label>
+                <label class="field">Neighbourhood
+                  <input type="text" name="neighbourhood" placeholder="Midtown" autocomplete="off" required>
+                  <small class="hint">Use the dataset spelling, e.g. Williamsburg, Harlem.</small>
+                  <small class="err" data-for="neighbourhood"></small>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Listing Details</legend>
+              <div class="grid">
+                <label class="field">Price per Night ($)
+                  <input type="number" name="price" step="any" min="0.01" placeholder="150" required>
+                  <small class="err" data-for="price"></small>
+                </label>
+                <label class="field">Minimum Nights
+                  <input type="number" name="minimum_nights" step="1" min="1" max="365" placeholder="2" required>
+                  <small class="err" data-for="minimum_nights"></small>
+                </label>
+                <label class="field">Number of Reviews
+                  <input type="number" name="number_of_reviews" step="1" min="0" placeholder="25" required>
+                  <small class="err" data-for="number_of_reviews"></small>
+                </label>
+                <label class="field">Reviews Per Month
+                  <input type="number" name="reviews_per_month" step="any" min="0" placeholder="0.8" required>
+                  <small class="err" data-for="reviews_per_month"></small>
+                </label>
+                <label class="field">Host Listings Count
+                  <input type="number" name="calculated_host_listings_count" step="1" min="0" placeholder="1" required>
+                  <small class="err" data-for="calculated_host_listings_count"></small>
+                </label>
+                <label class="field">Availability (days of 365)
+                  <input type="number" name="availability_365" step="1" min="0" max="365" placeholder="180" required>
+                  <small class="err" data-for="availability_365"></small>
+                </label>
+              </div>
+            </fieldset>
+
+            <button type="submit" class="btn btn--primary btn--lg btn--block" id="submitBtn">
+              <span class="btn__label">Predict Room Type</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+          </form>
+
+          <!-- Result panel: idle / loading / success / error -->
+          <aside class="card result" id="result" aria-live="polite">
+            <div class="result__state" id="stateIdle">
+              <svg viewBox="0 0 24 24" class="result__icon muted" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg>
+              <h3>Your prediction appears here</h3>
+              <p>Submit the form to see the predicted room type.</p>
+            </div>
+
+            <div class="result__state" id="stateLoading" hidden>
+              <div class="loader" aria-hidden="true"><i></i><i></i><i></i></div>
+              <h3>Analysing listing</h3>
+              <p>Waiting for the model to respond.</p>
+            </div>
+
+            <div class="result__state" id="stateSuccess" hidden>
+              <div class="result__iconwrap" id="resultIconWrap"></div>
+              <span class="badge" id="resultBadge"></span>
+              <h3 id="resultTitle"></h3>
+              <p id="resultDesc"></p>
+            </div>
+
+            <div class="result__state" id="stateError" hidden>
+              <svg viewBox="0 0 24 24" class="result__icon err-icon" aria-hidden="true"><path d="M12 2 1 21h22zm1 15h-2v-2h2zm0-4h-2V9h2z" fill="currentColor"/></svg>
+              <h3 id="errorTitle">Something went wrong</h3>
+              <p id="errorMsg"></p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="section section--warm" id="about">
+      <div class="wrap">
+        <h2>About the project</h2>
+        <p class="section__lead">StayWise NYC is a machine learning application built on the NYC Airbnb Open Data dataset. It solves a multiclass classification problem: given a listing's location, price, availability and review activity, which of three room types is it?</p>
+
+        <div class="about__cols">
+          <ul class="ticks">
+            <li>Multiclass classification across three room types</li>
+            <li>Python and Scikit-learn for modelling</li>
+            <li>Data preprocessing and feature engineering</li>
+            <li>Machine learning pipelines with ColumnTransformer</li>
+            <li>Model deployment with FastAPI</li>
+          </ul>
+
+          <ol class="flow" aria-label="How a prediction is made">
+            <li><strong>User Input</strong><span>Ten listing features from the form</span></li>
+            <li><strong>Data Validation</strong><span>Pydantic checks types and ranges</span></li>
+            <li><strong>ML Pipeline</strong><span>Imputing, scaling, encoding, classifier</span></li>
+            <li><strong>Predicted Room Type</strong><span>Returned as JSON to this page</span></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <div>
+        <a href="#home" class="brand">
+          <svg class="brand__logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg>
+          StayWise NYC
+        </a>
+        <p>A machine learning project that predicts Airbnb room types in New York City.</p>
+      </div>
+      <p class="footer__stack">Built with Python, Scikit-learn, FastAPI, HTML, CSS and JavaScript.</p>
+    </div>
+    <p class="wrap copy">&copy; <span id="year"></span> StayWise NYC. Educational project, not affiliated with Airbnb.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
